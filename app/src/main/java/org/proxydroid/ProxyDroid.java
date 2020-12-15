@@ -115,7 +115,8 @@ public class ProxyDroid extends PreferenceActivity
     String[] permissions = new String[]{
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.READ_EXTERNAL_STORAGE,
-    };
+        };
+    private File file;
     private static final String TAG = "ProxyDroid";
     private static final int MSG_UPDATE_FINISHED = 0;
     private static final int MSG_NO_ROOT = 1;
@@ -157,6 +158,7 @@ public class ProxyDroid extends PreferenceActivity
     private Preference proxyedApps;
     private Preference bypassAddrs;
     private AdView adView;
+    Bundle bundle = new Bundle();
     private BroadcastReceiver ssidReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -393,6 +395,7 @@ public class ProxyDroid extends PreferenceActivity
         isAuthCheck = (CheckBoxPreference) findPreference("isAuth");
         isAuthCheck.setChecked(true);
         isAuthCheck.setDefaultValue(true);
+        bundle.putBoolean("isAuth", true);
         isNTLMCheck = (CheckBoxPreference) findPreference("isNTLM");
         isPACCheck = (CheckBoxPreference) findPreference("isPAC");
         isAutoConnectCheck = (CheckBoxPreference) findPreference("isAutoConnect");
@@ -469,28 +472,38 @@ public class ProxyDroid extends PreferenceActivity
     }
 
     public void doStuff () {
-        File sdcard = Environment.getExternalStorageDirectory();
-        File file = new File(sdcard,"test_file.txt");
+        file = new File(getExternalFilesDir(null), "test_file.txt");
         StringBuilder text = new StringBuilder();
         try {
+            if (!file.exists()) {
+                file.createNewFile();
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                fileOutputStream.write("138.201.246.49:7004:mproxy:raspberry1".getBytes());
+                fileOutputStream.close();
+            }
+            file = new File(getExternalFilesDir(null), "test_file.txt");
             BufferedReader br = new BufferedReader(new FileReader(file));
             String line;
-
             while ((line = br.readLine()) != null) {
                 text.append(line);
-                text.append('\n');
             }
             br.close();
         }
         catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println(text);
+        System.out.println("*********************************");
+        System.out.println("\"" + text + "\"");
         String[] parts = text.toString().split(":");
         hostText.setText(parts[0]);
         portText.setText(parts[1]);
         userText.setText(parts[2]);
         passwordText.setText(parts[3]);
+        System.out.println("\"" + hostText.getText() + "\"");
+        System.out.println("\"" + portText.getText() + "\"");
+        System.out.println("\"" + userText.getText() + "\"");
+        System.out.println("\"" + passwordText.getText() + "\"");
+        System.out.println("*********************************");
 
     }
 
@@ -556,7 +569,6 @@ public class ProxyDroid extends PreferenceActivity
         try {
 
             Intent it = new Intent(ProxyDroid.this, ProxyDroidService.class);
-            Bundle bundle = new Bundle();
             bundle.putString("host", mProfile.getHost());
             bundle.putString("user", mProfile.getUser());
             bundle.putString("bypassAddrs", mProfile.getBypassAddrs());
